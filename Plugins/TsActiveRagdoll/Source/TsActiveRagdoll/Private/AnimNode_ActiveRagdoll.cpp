@@ -2,6 +2,7 @@
 #include "AnimNode_ActiveRagdoll.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SkeletalBodySetup.h"
 #include "Components/SkeletalMeshComponent.h"
 
 #define ANIM_MATH_PI 3.141592724f
@@ -56,7 +57,11 @@ void FAnimNode_ActiveRagdoll::PhysicsTick(float SubstepDeltaTime, FComponentSpac
 		FVector lOwnerTranslation;
 
 		const AActor* const lCharOwner = lAnimInstance->GetOwningActor();
-		const UINT32 lPhysicsBoneCount = lSkel->GetPhysicsAsset()->SkeletalBodySetups.Num();
+
+		UPhysicsAsset* PhysicsAsset = lSkel->GetPhysicsAsset();
+		if (!PhysicsAsset) return;
+
+		const int32 lPhysicsBoneCount = PhysicsAsset->SkeletalBodySetups.Num();
 
 		if (lCharOwner)
 		{
@@ -69,9 +74,14 @@ void FAnimNode_ActiveRagdoll::PhysicsTick(float SubstepDeltaTime, FComponentSpac
 			lOwnerTranslation = FVector::ZeroVector;
 		}
 
-		for (uint8 i = 0; i < lPhysicsBoneCount; i++)
+		for (int32 i = 0; i < lPhysicsBoneCount; ++i)
 		{
-			const FName lBoneName = lSkel->GetPhysicsAsset()->SkeletalBodySetups[i]->BoneName;
+			// กัน nullptr ไว้หน่อย กัน crash เวลา asset บางช่องว่าง
+			if (!PhysicsAsset->SkeletalBodySetups[i])
+			{
+				continue;
+			}
+			const FName lBoneName = PhysicsAsset->SkeletalBodySetups[i]->BoneName;
 
 			bool IsRoot = false;
 
